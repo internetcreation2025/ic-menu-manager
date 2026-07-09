@@ -1,0 +1,90 @@
+/* IC Menu Manager — admin UI */
+
+.icmm-wrap .icmm-tabs {
+	margin-bottom: 1em;
+}
+
+.icmm-wrap .description {
+	max-width: 60em;
+}
+
+/* Builder two-panel layout */
+.icmm-panels {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 24px;
+	margin-top: 12px;
+}
+
+.icmm-panel {
+	flex: 1 1 320px;
+	min-width: 300px;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	padding: 16px 20px;
+}
+
+.icmm-panel h3 {
+	margin-top: 0;
+	padding-bottom: 8px;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.icmm-menu-block {
+	padding: 6px 0;
+	border-bottom: 1px solid #f6f7f7;
+}
+
+.icmm-menu-block:last-child {
+	border-bottom: 0;
+}
+
+.icmm-top {
+	display: block;
+	font-size: 13px;
+}
+
+.icmm-subs {
+	margin: 4px 0 4px 26px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.icmm-sub {
+	font-size: 13px;
+	color: #50575e;
+}
+
+.icmm-sub input[disabled] + span,
+.icmm-menu-block:has(.icmm-top-cb:checked) .icmm-subs {
+	opacity: 0.5;
+}
+
+.icmm-bar {
+	display: block;
+	padding: 4px 0;
+	font-size: 13px;
+}
+
+.icmm-bar code {
+	color: #787c82;
+	font-size: 11px;
+}
+
+.icmm-inline {
+	display: inline-block;
+	margin: 0;
+}
+
+.icmm-delete {
+	color: #b32d2e !important;
+	cursor: pointer;
+}
+
+.icmm-warn {
+	color: #b32d2e;
+	font-weight: normal;
+	font-size: 12px;
+}
