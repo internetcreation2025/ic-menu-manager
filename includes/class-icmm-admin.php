@@ -30,6 +30,8 @@ class ICMM_Admin {
 		add_action( 'admin_post_icmm_save_roles', array( $this, 'handle_save_roles' ) );
 		add_action( 'admin_post_icmm_save_user', array( $this, 'handle_save_user' ) );
 		add_filter( 'plugin_action_links_' . ICMM_BASENAME, array( $this, 'action_links' ) );
+		add_filter( 'manage_users_columns', array( $this, 'users_column' ) );
+		add_filter( 'manage_users_custom_column', array( $this, 'users_column_content' ), 10, 3 );
 	}
 
 	private function can_manage() {
@@ -66,6 +68,50 @@ class ICMM_Admin {
 		}
 		wp_enqueue_style( 'icmm-admin', ICMM_URL . 'assets/admin.css', array(), ICMM_VERSION );
 		wp_enqueue_script( 'icmm-admin', ICMM_URL . 'assets/admin.js', array(), ICMM_VERSION, true );
+	}
+
+	/* ---------------------------------------------------------------------
+	 * Users list column
+	 * ------------------------------------------------------------------- */
+
+	public function users_column( $columns ) {
+		if ( $this->can_manage() ) {
+			$columns['icmm_group'] = __( 'Menu Group', 'ic-menu-manager' );
+		}
+		return $columns;
+	}
+
+	public function users_column_content( $output, $column, $user_id ) {
+		if ( 'icmm_group' !== $column || ! $this->can_manage() ) {
+			return $output;
+		}
+		$url = add_query_arg( array( 'page' => self::SLUG, 'tab' => 'assignments' ), admin_url( 'admin.php' ) );
+
+		// Direct per-user assignment wins.
+		$direct = ICMM_Groups::user_group( $user_id );
+		if ( $direct ) {
+			$g = ICMM_Groups::get( $direct );
+			if ( $g ) {
+				return '<a href="' . esc_url( $url ) . '">' . esc_html( $g['name'] ) . '</a>';
+			}
+		}
+
+		// Otherwise show the group inherited from the first matching role.
+		$user = get_userdata( $user_id );
+		if ( $user ) {
+			$role_groups = ICMM_Groups::role_groups();
+			foreach ( (array) $user->roles as $role ) {
+				if ( ! empty( $role_groups[ $role ] ) ) {
+					$g = ICMM_Groups::get( $role_groups[ $role ] );
+					if ( $g ) {
+						return '<a href="' . esc_url( $url ) . '">' . esc_html( $g['name'] ) . '</a> <span class="description">'
+							. esc_html__( '(via role)', 'ic-menu-manager' ) . '</span>';
+					}
+				}
+			}
+		}
+
+		return '<span class="description">&mdash;</span>';
 	}
 
 	/* ---------------------------------------------------------------------
