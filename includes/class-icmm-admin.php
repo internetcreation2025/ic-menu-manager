@@ -267,6 +267,16 @@ class ICMM_Admin {
 		return $out;
 	}
 
+	/** Human-readable, comma-separated list of a user's WordPress roles. */
+	public static function user_roles_label( $user ) {
+		$names  = wp_roles()->get_names();
+		$labels = array();
+		foreach ( (array) $user->roles as $role ) {
+			$labels[] = isset( $names[ $role ] ) ? translate_user_role( $names[ $role ] ) : $role;
+		}
+		return $labels ? implode( ', ', $labels ) : '—';
+	}
+
 	public function render() {
 		if ( ! $this->can_manage() ) {
 			wp_die( esc_html__( 'You are not allowed to view this page.', 'ic-menu-manager' ) );
@@ -474,10 +484,11 @@ class ICMM_Admin {
 		echo '<h2>' . esc_html__( 'Users', 'ic-menu-manager' ) . '</h2>';
 		$assigned = get_users( array( 'meta_key' => ICMM_Groups::USER_META, 'number' => 500 ) );
 		if ( $assigned ) {
-			echo '<table class="wp-list-table widefat fixed striped"><thead><tr><th>' . esc_html__( 'User', 'ic-menu-manager' ) . '</th><th>' . esc_html__( 'Group', 'ic-menu-manager' ) . '</th><th></th></tr></thead><tbody>';
+			echo '<table class="wp-list-table widefat fixed striped"><thead><tr><th>' . esc_html__( 'User', 'ic-menu-manager' ) . '</th><th>' . esc_html__( 'Role(s)', 'ic-menu-manager' ) . '</th><th>' . esc_html__( 'Group', 'ic-menu-manager' ) . '</th><th></th></tr></thead><tbody>';
 			foreach ( $assigned as $u ) {
 				$gid = ICMM_Groups::user_group( $u->ID );
 				echo '<tr><td><strong>' . esc_html( $u->display_name ) . '</strong> <span class="description">' . esc_html( $u->user_email ) . '</span></td>';
+				echo '<td>' . esc_html( self::user_roles_label( $u ) ) . '</td>';
 				echo '<td><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="icmm-inline">';
 				wp_nonce_field( 'icmm_save_user' );
 				echo '<input type="hidden" name="action" value="icmm_save_user">';
