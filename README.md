@@ -59,9 +59,15 @@ and via the **Check for updates** link on the Plugins screen.
      -R internetcreation2025/ic-menu-manager -t "v1.1.0" -n "Release notes…"
    ```
 
-Sites running an older version will see the new release and update to the
-attached zip. The updater compares the release **tag** (a leading `v` is
-stripped) against the running version with `version_compare`.
+Sites running an older version **auto-install** the new release in the
+background (WordPress cron, ~within 12h) — no clicks required. The updater
+compares the release **tag** (a leading `v` is stripped) against the running
+version with `version_compare`.
+
+To make updates **manual** instead (show the update but don't auto-install),
+either define `ICMM_DISABLE_AUTOUPDATE` true in `wp-config.php` on a site, or
+remove the `auto_update_plugin` filter. Cutting a release is always the
+trigger — nothing rolls out until you publish one.
 
 Repo is public, so no token is needed. If it is ever made private, define
 `ICMM_UPDATER_GITHUB_TOKEN` in `wp-config.php` on each site.
