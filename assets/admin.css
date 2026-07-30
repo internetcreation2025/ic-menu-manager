@@ -88,3 +88,21 @@
 	font-weight: normal;
 	font-size: 12px;
 }
+
+.icmm-bulk-assign {
+	max-width: 480px;
+}
+
+.icmm-bulk-assign .icmm-user-filter {
+	width: 100%;
+	max-width: 480px;
+}
+
+.icmm-user-multiselect {
+	width: 100%;
+	max-width: 480px;
+}
+
+.icmm-bulk-controls {
+	margin: 6px 0;
+}

@@ -24,5 +24,37 @@
 			top.addEventListener( 'change', sync );
 			sync();
 		} );
+
+		// Bulk user assignment: live filter + select-all/none of shown users.
+		var filter = document.querySelector( '.icmm-user-filter' );
+		var multi  = document.querySelector( '.icmm-user-multiselect' );
+		if ( filter && multi ) {
+			filter.addEventListener( 'input', function () {
+				var q = filter.value.toLowerCase();
+				Array.prototype.forEach.call( multi.options, function ( o ) {
+					o.hidden = q && o.text.toLowerCase().indexOf( q ) === -1;
+				} );
+			} );
+		}
+		if ( multi ) {
+			var all = document.querySelector( '.icmm-select-all' );
+			var none = document.querySelector( '.icmm-select-none' );
+			if ( all ) {
+				all.addEventListener( 'click', function () {
+					Array.prototype.forEach.call( multi.options, function ( o ) {
+						if ( ! o.hidden ) {
+							o.selected = true;
+						}
+					} );
+				} );
+			}
+			if ( none ) {
+				none.addEventListener( 'click', function () {
+					Array.prototype.forEach.call( multi.options, function ( o ) {
+						o.selected = false;
+					} );
+				} );
+			}
+		}
 	} );
 } )();

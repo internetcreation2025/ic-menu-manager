@@ -29,6 +29,7 @@ class ICMM_Admin {
 		add_action( 'admin_post_icmm_delete_group', array( $this, 'handle_delete_group' ) );
 		add_action( 'admin_post_icmm_save_roles', array( $this, 'handle_save_roles' ) );
 		add_action( 'admin_post_icmm_save_user', array( $this, 'handle_save_user' ) );
+		add_action( 'admin_post_icmm_bulk_assign', array( $this, 'handle_bulk_assign' ) );
 		add_filter( 'plugin_action_links_' . ICMM_BASENAME, array( $this, 'action_links' ) );
 		add_filter( 'manage_users_columns', array( $this, 'users_column' ) );
 		add_filter( 'manage_users_custom_column', array( $this, 'users_column_content' ), 10, 3 );
@@ -175,6 +176,20 @@ class ICMM_Admin {
 		$this->redirect( array( 'tab' => 'assignments', 'icmm_status' => 'user' ) );
 	}
 
+	public function handle_bulk_assign() {
+		$this->verify( 'icmm_bulk_assign' );
+		$ids = isset( $_POST['user_ids'] ) ? array_map( 'intval', (array) wp_unslash( $_POST['user_ids'] ) ) : array();
+		$gid = isset( $_POST['group_id'] ) ? sanitize_key( wp_unslash( $_POST['group_id'] ) ) : '';
+		$count = 0;
+		foreach ( $ids as $uid ) {
+			if ( $uid ) {
+				ICMM_Groups::set_user_group( $uid, $gid );
+				$count++;
+			}
+		}
+		$this->redirect( array( 'tab' => 'assignments', 'icmm_status' => ( '' === $gid ? 'bulk_removed' : 'bulk' ), 'n' => $count ) );
+	}
+
 	/* ---------------------------------------------------------------------
 	 * Rendering
 	 * ------------------------------------------------------------------- */
@@ -232,6 +247,14 @@ class ICMM_Admin {
 		);
 		if ( isset( $map[ $status ] ) ) {
 			printf( '<div class="notice notice-%s is-dismissible"><p>%s</p></div>', esc_attr( $map[ $status ][0] ), esc_html( $map[ $status ][1] ) );
+		} elseif ( 'bulk' === $status || 'bulk_removed' === $status ) {
+			$n   = isset( $_GET['n'] ) ? (int) $_GET['n'] : 0;
+			$msg = 'bulk_removed' === $status
+				/* translators: %d: number of users */
+				? sprintf( _n( 'Group removed from %d user.', 'Group removed from %d users.', $n, 'ic-menu-manager' ), $n )
+				/* translators: %d: number of users */
+				: sprintf( _n( 'Group assigned to %d user.', 'Group assigned to %d users.', $n, 'ic-menu-manager' ), $n );
+			printf( '<div class="notice notice-success is-dismissible"><p>%s</p></div>', esc_html( $msg ) );
 		}
 	}
 
@@ -404,18 +427,22 @@ class ICMM_Admin {
 			echo '<p>' . esc_html__( 'No users have a group assigned yet.', 'ic-menu-manager' ) . '</p>';
 		}
 
-		/* Assign a new user */
-		echo '<h3>' . esc_html__( 'Assign a user', 'ic-menu-manager' ) . '</h3>';
-		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="icmm-inline">';
-		wp_nonce_field( 'icmm_save_user' );
-		echo '<input type="hidden" name="action" value="icmm_save_user">';
-		echo '<select name="user_id" required><option value="">' . esc_html__( '— Select user —', 'ic-menu-manager' ) . '</option>';
-		foreach ( get_users( array( 'number' => 500, 'orderby' => 'display_name' ) ) as $u ) {
+		/* Assign one or more users at once */
+		echo '<h3>' . esc_html__( 'Assign users', 'ic-menu-manager' ) . '</h3>';
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="icmm-bulk-assign">';
+		wp_nonce_field( 'icmm_bulk_assign' );
+		echo '<input type="hidden" name="action" value="icmm_bulk_assign">';
+		echo '<p><input type="search" class="icmm-user-filter" placeholder="' . esc_attr__( 'Filter users…', 'ic-menu-manager' ) . '" autocomplete="off"></p>';
+		echo '<select name="user_ids[]" multiple size="12" class="icmm-user-multiselect" required>';
+		foreach ( get_users( array( 'number' => 1000, 'orderby' => 'display_name' ) ) as $u ) {
 			echo '<option value="' . esc_attr( $u->ID ) . '">' . esc_html( $u->display_name . ' (' . $u->user_login . ')' ) . '</option>';
 		}
-		echo '</select> ';
-		echo $this->group_select( 'group_id', '', $groups );
-		echo ' <button type="submit" class="button button-primary">' . esc_html__( 'Assign', 'ic-menu-manager' ) . '</button>';
+		echo '</select>';
+		echo '<p class="icmm-bulk-controls"><button type="button" class="button icmm-select-all">' . esc_html__( 'Select all shown', 'ic-menu-manager' ) . '</button> ';
+		echo '<button type="button" class="button icmm-select-none">' . esc_html__( 'Clear selection', 'ic-menu-manager' ) . '</button></p>';
+		echo '<p>' . esc_html__( 'Assign group:', 'ic-menu-manager' ) . ' ' . $this->group_select( 'group_id', '', $groups );
+		echo ' <button type="submit" class="button button-primary">' . esc_html__( 'Assign to selected', 'ic-menu-manager' ) . '</button></p>';
+		echo '<p class="description">' . esc_html__( 'Hold Ctrl (Cmd on Mac) to pick several, or drag across names. Choosing “— None —” removes the group from the selected users.', 'ic-menu-manager' ) . '</p>';
 		echo '</form>';
 	}
 
