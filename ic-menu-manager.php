@@ -3,7 +3,7 @@
  * Plugin Name:       IC Menu Manager
  * Plugin URI:        https://github.com/internetcreation2025/ic-menu-manager
  * Description:        Control what users see and can access in the wp-admin sidebar menu and the top admin bar. Build reusable Menu Groups (block-lists) and assign them to users and roles.
- * Version:           1.1.1
+ * Version:           1.1.2
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Internet Creation
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ICMM_VERSION', '1.1.1' );
+define( 'ICMM_VERSION', '1.1.2' );
 define( 'ICMM_FILE', __FILE__ );
 define( 'ICMM_DIR', plugin_dir_path( __FILE__ ) );
 define( 'ICMM_URL', plugin_dir_url( __FILE__ ) );

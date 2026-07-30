@@ -39,12 +39,20 @@ Stored via the Options API + user meta — no custom tables:
 
 Uninstall is conservative and keeps your data by default (see `uninstall.php`).
 
-## Updates (fleet auto-update from GitHub)
+## Updates (fleet updates from GitHub via ICJD)
 
-The plugin updates itself from this repo's **GitHub Releases** — no PUC library
-(so it can't collide with the fleet's `internetcreation` PUC 4.11), and it fails
-silently if GitHub is unreachable. Each site checks periodically (WordPress cron)
-and via the **Check for updates** link on the Plugins screen.
+The plugin advertises new versions from this repo's **GitHub Releases** through
+WordPress's standard update API — no PUC library (so it can't collide with the
+fleet's `internetcreation` PUC 4.11), and it fails silently if GitHub is
+unreachable. New releases appear as a normal plugin update in wp-admin, in
+`wp plugin update`, and via the **Check for updates** link on the Plugins screen.
+
+**Delivery on the fleet is handled by ICJD, not WordPress cron.** The
+`icjd-site-policy` mu-plugin deliberately disables unattended WP auto-updates so
+every update goes through ICJD's snapshot → apply → smoke-test → rollback
+pipeline. This plugin does **not** try to force WP-cron auto-update (ICJD vetoes
+that by design); it simply exposes the release so ICJD's apply pass rolls it out
+safely to all sites. Cutting a GitHub release is the fleet-wide trigger.
 
 **To ship an update to the whole fleet:**
 
@@ -59,15 +67,15 @@ and via the **Check for updates** link on the Plugins screen.
      -R internetcreation2025/ic-menu-manager -t "v1.1.0" -n "Release notes…"
    ```
 
-Sites running an older version **auto-install** the new release in the
-background (WordPress cron, ~within 12h) — no clicks required. The updater
-compares the release **tag** (a leading `v` is stripped) against the running
-version with `version_compare`.
+Sites running an older version will show/apply the new release through the
+standard update path (ICJD's apply pass, or a one-click update in wp-admin). The
+updater compares the release **tag** (a leading `v` is stripped) against the
+running version with `version_compare`. Nothing rolls out until you publish a
+release.
 
-To make updates **manual** instead (show the update but don't auto-install),
-either define `ICMM_DISABLE_AUTOUPDATE` true in `wp-config.php` on a site, or
-remove the `auto_update_plugin` filter. Cutting a release is always the
-trigger — nothing rolls out until you publish one.
+If you ever need a site to self-update via WP-cron independently of ICJD, that's
+an ICJD-policy change (exempt this plugin in `icjd-site-policy`), not a change
+here — this plugin intentionally respects the fleet update governance.
 
 Repo is public, so no token is needed. If it is ever made private, define
 `ICMM_UPDATER_GITHUB_TOKEN` in `wp-config.php` on each site.

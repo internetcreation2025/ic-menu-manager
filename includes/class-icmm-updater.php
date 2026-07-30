@@ -43,7 +43,6 @@ class ICMM_Updater {
 		add_filter( 'plugins_api', array( $this, 'plugins_api' ), 10, 3 );
 		add_filter( 'upgrader_source_selection', array( $this, 'fix_source_dir' ), 10, 4 );
 		add_action( 'upgrader_process_complete', array( $this, 'clear_cache' ) );
-		add_filter( 'auto_update_plugin', array( $this, 'enable_auto_update' ), 10, 2 );
 		add_filter( 'plugin_action_links_' . $this->file, array( $this, 'action_link' ) );
 		add_action( 'admin_init', array( $this, 'maybe_manual_check' ) );
 		add_action( 'admin_notices', array( $this, 'checked_notice' ) );
@@ -176,21 +175,6 @@ class ICMM_Updater {
 
 	public function clear_cache() {
 		delete_site_transient( $this->cache_key );
-	}
-
-	/**
-	 * Turn on hands-off background auto-updates for this plugin fleet-wide, so every
-	 * install self-updates within ~12h of a new release. Kill-switch:
-	 * define('ICMM_DISABLE_AUTOUPDATE', true); in wp-config.php.
-	 */
-	public function enable_auto_update( $update, $item ) {
-		if ( defined( 'ICMM_DISABLE_AUTOUPDATE' ) && ICMM_DISABLE_AUTOUPDATE ) {
-			return $update;
-		}
-		if ( is_object( $item ) && ! empty( $item->plugin ) && $item->plugin === $this->file ) {
-			return true;
-		}
-		return $update;
 	}
 
 	/* ---- Manual "Check for updates" link on the Plugins screen ---- */
