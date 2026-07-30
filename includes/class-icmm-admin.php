@@ -33,6 +33,9 @@ class ICMM_Admin {
 		add_filter( 'plugin_action_links_' . ICMM_BASENAME, array( $this, 'action_links' ) );
 		add_filter( 'manage_users_columns', array( $this, 'users_column' ) );
 		add_filter( 'manage_users_custom_column', array( $this, 'users_column_content' ), 10, 3 );
+		add_filter( 'bulk_actions-users', array( $this, 'users_bulk_actions' ) );
+		add_filter( 'handle_bulk_actions-users', array( $this, 'users_handle_bulk' ), 10, 3 );
+		add_action( 'admin_notices', array( $this, 'users_bulk_notice' ) );
 	}
 
 	private function can_manage() {
@@ -113,6 +116,67 @@ class ICMM_Admin {
 		}
 
 		return '<span class="description">&mdash;</span>';
+	}
+
+	/* Adds "Menu Group → <name>" (one per group) and "Menu Group → Remove" to the Users bulk-actions dropdown. */
+	public function users_bulk_actions( $actions ) {
+		if ( ! $this->can_manage() ) {
+			return $actions;
+		}
+		$groups = ICMM_Groups::all();
+		foreach ( $groups as $id => $g ) {
+			/* translators: %s: group name */
+			$actions[ 'icmm_set_' . $id ] = esc_html( sprintf( __( 'Menu Group → %s', 'ic-menu-manager' ), $g['name'] ) );
+		}
+		if ( $groups ) {
+			$actions['icmm_remove'] = esc_html__( 'Menu Group → Remove', 'ic-menu-manager' );
+		}
+		return $actions;
+	}
+
+	/* WordPress verifies the bulk nonce before this fires; we just apply the change. */
+	public function users_handle_bulk( $redirect, $action, $user_ids ) {
+		if ( ! $this->can_manage() ) {
+			return $redirect;
+		}
+		$do  = '';
+		$gid = '';
+		if ( 0 === strpos( $action, 'icmm_set_' ) ) {
+			$gid = sanitize_key( substr( $action, strlen( 'icmm_set_' ) ) );
+			if ( ! ICMM_Groups::get( $gid ) ) {
+				return $redirect;
+			}
+			$do = 'set';
+		} elseif ( 'icmm_remove' === $action ) {
+			$do = 'remove';
+		} else {
+			return $redirect;
+		}
+
+		$n = 0;
+		foreach ( (array) $user_ids as $uid ) {
+			ICMM_Groups::set_user_group( (int) $uid, 'set' === $do ? $gid : '' );
+			$n++;
+		}
+		return add_query_arg( array( 'icmm_bulk' => $n, 'icmm_bulk_do' => $do ), $redirect );
+	}
+
+	public function users_bulk_notice() {
+		if ( empty( $_GET['icmm_bulk'] ) ) {
+			return;
+		}
+		$screen = get_current_screen();
+		if ( ! $screen || 'users' !== $screen->id ) {
+			return;
+		}
+		$n  = (int) $_GET['icmm_bulk'];
+		$do = isset( $_GET['icmm_bulk_do'] ) ? sanitize_key( $_GET['icmm_bulk_do'] ) : 'set';
+		$msg = 'remove' === $do
+			/* translators: %d: number of users */
+			? sprintf( _n( 'Menu Group removed from %d user.', 'Menu Group removed from %d users.', $n, 'ic-menu-manager' ), $n )
+			/* translators: %d: number of users */
+			: sprintf( _n( 'Menu Group set for %d user.', 'Menu Group set for %d users.', $n, 'ic-menu-manager' ), $n );
+		printf( '<div class="notice notice-success is-dismissible"><p>%s</p></div>', esc_html( $msg ) );
 	}
 
 	/* ---------------------------------------------------------------------
