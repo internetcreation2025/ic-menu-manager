@@ -39,6 +39,33 @@ Stored via the Options API + user meta — no custom tables:
 
 Uninstall is conservative and keeps your data by default (see `uninstall.php`).
 
+## Updates (fleet auto-update from GitHub)
+
+The plugin updates itself from this repo's **GitHub Releases** — no PUC library
+(so it can't collide with the fleet's `internetcreation` PUC 4.11), and it fails
+silently if GitHub is unreachable. Each site checks periodically (WordPress cron)
+and via the **Check for updates** link on the Plugins screen.
+
+**To ship an update to the whole fleet:**
+
+1. Bump the `Version:` header in `ic-menu-manager.php`.
+2. Commit and push to `main`.
+3. Build the zip and cut a release whose **tag matches the version**, attaching the zip:
+   ```bash
+   cd "IC SaaS Apps"
+   zip -r -X /tmp/ic-menu-manager.zip ic-menu-manager \
+     -x "ic-menu-manager/.git/*" "*/.DS_Store" "ic-menu-manager/project_specs.md"
+   gh release create v1.1.0 /tmp/ic-menu-manager.zip \
+     -R internetcreation2025/ic-menu-manager -t "v1.1.0" -n "Release notes…"
+   ```
+
+Sites running an older version will see the new release and update to the
+attached zip. The updater compares the release **tag** (a leading `v` is
+stripped) against the running version with `version_compare`.
+
+Repo is public, so no token is needed. If it is ever made private, define
+`ICMM_UPDATER_GITHUB_TOKEN` in `wp-config.php` on each site.
+
 ## Requirements
 
 WordPress 6.0+, PHP 7.4+.
