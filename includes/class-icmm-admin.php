@@ -482,7 +482,7 @@ class ICMM_Admin {
 
 		/* Users with an assignment */
 		echo '<h2>' . esc_html__( 'Users', 'ic-menu-manager' ) . '</h2>';
-		$assigned = get_users( array( 'meta_key' => ICMM_Groups::USER_META, 'number' => 500 ) );
+		$assigned = get_users( array( 'meta_key' => ICMM_Groups::USER_META, 'number' => 2000, 'orderby' => 'display_name' ) );
 		if ( $assigned ) {
 			echo '<table class="wp-list-table widefat fixed striped"><thead><tr><th>' . esc_html__( 'User', 'ic-menu-manager' ) . '</th><th>' . esc_html__( 'Role(s)', 'ic-menu-manager' ) . '</th><th>' . esc_html__( 'Group', 'ic-menu-manager' ) . '</th><th></th></tr></thead><tbody>';
 			foreach ( $assigned as $u ) {
@@ -504,15 +504,56 @@ class ICMM_Admin {
 
 		/* Assign one or more users at once */
 		echo '<h3>' . esc_html__( 'Assign users', 'ic-menu-manager' ) . '</h3>';
+
+		// Server-side role filter — narrows a large membership list to the people
+		// you actually assign (e.g. just Administrators), so the row cap can't hide
+		// them. Reloads the page with ?icmm_role=… and queries only that role.
+		$role_filter = isset( $_GET['icmm_role'] ) ? sanitize_key( wp_unslash( $_GET['icmm_role'] ) ) : '';
+		$roles       = self::roles();
+		if ( ! isset( $roles[ $role_filter ] ) ) {
+			$role_filter = '';
+		}
+		echo '<form method="get" class="icmm-role-filter">';
+		echo '<input type="hidden" name="page" value="' . esc_attr( self::SLUG ) . '">';
+		echo '<input type="hidden" name="tab" value="assignments">';
+		echo '<label for="icmm-role">' . esc_html__( 'Filter by role:', 'ic-menu-manager' ) . ' </label>';
+		echo '<select name="icmm_role" id="icmm-role" onchange="this.form.submit()">';
+		echo '<option value="">' . esc_html__( 'All roles', 'ic-menu-manager' ) . '</option>';
+		foreach ( $roles as $rk => $rlabel ) {
+			echo '<option value="' . esc_attr( $rk ) . '" ' . selected( $role_filter, $rk, false ) . '>' . esc_html( $rlabel ) . '</option>';
+		}
+		echo '</select> <noscript><button type="submit" class="button">' . esc_html__( 'Filter', 'ic-menu-manager' ) . '</button></noscript>';
+		echo '</form>';
+
+		$cap        = 2000;
+		$query_args = array( 'orderby' => 'display_name', 'order' => 'ASC', 'number' => $cap + 1 );
+		if ( $role_filter ) {
+			$query_args['role'] = $role_filter;
+		}
+		$assign_users = get_users( $query_args );
+		$truncated    = count( $assign_users ) > $cap;
+		if ( $truncated ) {
+			$assign_users = array_slice( $assign_users, 0, $cap );
+		}
+
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="icmm-bulk-assign">';
 		wp_nonce_field( 'icmm_bulk_assign' );
 		echo '<input type="hidden" name="action" value="icmm_bulk_assign">';
-		echo '<p><input type="search" class="icmm-user-filter" placeholder="' . esc_attr__( 'Filter users…', 'ic-menu-manager' ) . '" autocomplete="off"></p>';
+		echo '<p><input type="search" class="icmm-user-filter" placeholder="' . esc_attr__( 'Filter this list by name or role…', 'ic-menu-manager' ) . '" autocomplete="off"></p>';
 		echo '<select name="user_ids[]" multiple size="12" class="icmm-user-multiselect" required>';
-		foreach ( get_users( array( 'number' => 1000, 'orderby' => 'display_name' ) ) as $u ) {
-			echo '<option value="' . esc_attr( $u->ID ) . '">' . esc_html( $u->display_name . ' (' . $u->user_login . ')' ) . '</option>';
+		foreach ( $assign_users as $u ) {
+			echo '<option value="' . esc_attr( $u->ID ) . '">' . esc_html( $u->display_name . ' (' . $u->user_login . ') — ' . self::user_roles_label( $u ) ) . '</option>';
 		}
 		echo '</select>';
+		echo '<p class="description">' . esc_html( sprintf(
+			/* translators: %d: number of users shown */
+			_n( 'Showing %d user.', 'Showing %d users.', count( $assign_users ), 'ic-menu-manager' ),
+			count( $assign_users )
+		) );
+		if ( $truncated ) {
+			echo ' ' . esc_html__( 'List truncated at 2000 — use the role filter above to narrow it.', 'ic-menu-manager' );
+		}
+		echo '</p>';
 		echo '<p class="icmm-bulk-controls"><button type="button" class="button icmm-select-all">' . esc_html__( 'Select all shown', 'ic-menu-manager' ) . '</button> ';
 		echo '<button type="button" class="button icmm-select-none">' . esc_html__( 'Clear selection', 'ic-menu-manager' ) . '</button></p>';
 		echo '<p>' . esc_html__( 'Assign group:', 'ic-menu-manager' ) . ' ' . $this->group_select( 'group_id', '', $groups );
