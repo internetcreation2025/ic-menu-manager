@@ -24,7 +24,7 @@ On every wp-admin load the plugin captures the live `$menu`, `$submenu`, and adm
 - Admin bar: **node id** (`wp-logo`, `updates`, …).
 
 ## Pages & flows (wp-admin, admin-only)
-Top-level menu **Menu Manager** (dashicons-menu-alt), two tabs:
+Top-level menu **Menu Manager** (dashicons-menu-alt), three tabs:
 
 **1. Groups**
 - List of groups (name, # items blocked, # users/roles assigned).
@@ -38,17 +38,24 @@ Top-level menu **Menu Manager** (dashicons-menu-alt), two tabs:
 - **Roles** table: each role → group dropdown ("— None —" default). Warning shown when assigning a group to *Administrator*.
 - **Users** table: search a user → group dropdown. Per-user assignment overrides role.
 
+**3. Menu Order** (added v1.2.0)
+- A drag-and-drop (plus ↑/↓ buttons) list of the **top-level** sidebar items from the live catalog.
+- Sets **one global order** applied site-wide to everyone. Save Order / Reset to default.
+- Composes with groups: items a group hides simply don't appear; newly-installed plugins are appended at the end until moved. Submenu order is left to WordPress (out of scope for v1.2.0).
+
 ## Data models
 - `option: icmm_catalog` → live `{ menu:[…], submenu:{…}, adminbar:[…] }` snapshot for the builder.
 - `option: icmm_groups` → `{ group_id: { name, block_menu:[slug…], block_submenu:{parent:[slug…]}, block_adminbar:[node_id…] } }`
 - `option: icmm_role_groups` → `{ role_key: group_id }`
 - `user meta: icmm_group` → `group_id` (per-user override)
+- `option: icmm_menu_order` → `[ slug, … ]` global top-level sidebar order (v1.2.0)
 
 ## Runtime behaviour — hide **and** block
 - `admin_menu` (pri 999): for the current user's effective group, `remove_menu_page()` / `remove_submenu_page()` every blocked item. Blocking a top-level also removes its submenus.
 - `admin_init` (pri 1) **access guard**: compute the requested admin page (core `$pagenow`, else `?page=` slug). If it's blocked → redirect to Dashboard (or profile.php if Dashboard is also blocked) with a "no access" notice. This is what makes blocking real — a pasted URL is stopped, not just hidden.
 - `admin_bar_menu` (pri 999): `remove_node()` for every blocked admin-bar node.
 - **Effective group:** per-user assignment > first matching role assignment > none.
+- **Menu order (v1.2.0):** `custom_menu_order` returns true only when a saved order exists; `menu_order` reorders top-level slugs — saved order first (those still present), then separators / new items in their original order. Applies to everyone; whitelisted against the live catalog on save so only real slugs persist.
 
 ## Seeded group — "IC Client" (created on activation)
 A ready-made group blocking (each "if present" item resolved against the live catalog by title, skipped if absent):

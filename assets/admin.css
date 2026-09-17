@@ -110,3 +110,56 @@
 .icmm-role-filter {
 	margin: 4px 0 12px;
 }
+
+/* Menu Order tab */
+.icmm-order-list {
+	max-width: 640px;
+	margin: 14px 0;
+	padding: 0;
+	list-style: none;
+}
+
+.icmm-order-item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 8px 12px;
+	margin: 0 0 6px;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	cursor: grab;
+}
+
+.icmm-order-item.icmm-dragging {
+	opacity: 0.5;
+	border-style: dashed;
+}
+
+.icmm-order-handle {
+	color: #8c8f94;
+	cursor: grab;
+}
+
+.icmm-order-title {
+	font-weight: 600;
+}
+
+.icmm-order-slug {
+	color: #646970;
+	background: #f6f7f7;
+	font-size: 11px;
+	padding: 1px 6px;
+	border-radius: 3px;
+}
+
+.icmm-order-moves {
+	margin-left: auto;
+	white-space: nowrap;
+}
+
+.icmm-order-moves .button {
+	padding: 0 8px;
+	min-height: 26px;
+	line-height: 24px;
+}

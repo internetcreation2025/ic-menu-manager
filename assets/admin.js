@@ -56,5 +56,78 @@
 				} );
 			}
 		}
+
+		// Menu Order tab: drag to reorder, plus ↑/↓ buttons. Each row carries its
+		// own hidden order[] input, so the DOM order IS the submitted order — no
+		// serialisation needed.
+		var orderList = document.querySelector( '.icmm-order-list' );
+		if ( orderList ) {
+			var dragging = null;
+
+			orderList.addEventListener( 'dragstart', function ( e ) {
+				var li = e.target.closest( '.icmm-order-item' );
+				if ( ! li ) {
+					return;
+				}
+				dragging = li;
+				li.classList.add( 'icmm-dragging' );
+				if ( e.dataTransfer ) {
+					e.dataTransfer.effectAllowed = 'move';
+				}
+			} );
+
+			orderList.addEventListener( 'dragend', function () {
+				if ( dragging ) {
+					dragging.classList.remove( 'icmm-dragging' );
+				}
+				dragging = null;
+			} );
+
+			orderList.addEventListener( 'dragover', function ( e ) {
+				if ( ! dragging ) {
+					return;
+				}
+				e.preventDefault();
+				var after = afterElement( orderList, e.clientY );
+				if ( null === after ) {
+					orderList.appendChild( dragging );
+				} else if ( after !== dragging ) {
+					orderList.insertBefore( dragging, after );
+				}
+			} );
+
+			function afterElement( container, y ) {
+				var items = Array.prototype.slice.call(
+					container.querySelectorAll( '.icmm-order-item:not(.icmm-dragging)' )
+				);
+				var closest = { offset: -Infinity, el: null };
+				items.forEach( function ( el ) {
+					var box = el.getBoundingClientRect();
+					var offset = y - box.top - box.height / 2;
+					if ( offset < 0 && offset > closest.offset ) {
+						closest = { offset: offset, el: el };
+					}
+				} );
+				return closest.el;
+			}
+
+			orderList.addEventListener( 'click', function ( e ) {
+				var up = e.target.closest( '.icmm-move-up' );
+				var down = e.target.closest( '.icmm-move-down' );
+				if ( ! up && ! down ) {
+					return;
+				}
+				e.preventDefault();
+				var li = e.target.closest( '.icmm-order-item' );
+				if ( ! li ) {
+					return;
+				}
+				if ( up && li.previousElementSibling ) {
+					orderList.insertBefore( li, li.previousElementSibling );
+				} else if ( down && li.nextElementSibling ) {
+					orderList.insertBefore( li.nextElementSibling, li );
+				}
+			} );
+		}
 	} );
 } )();

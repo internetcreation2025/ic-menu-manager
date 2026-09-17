@@ -28,6 +28,7 @@ class ICMM_Admin {
 		add_action( 'admin_post_icmm_save_group', array( $this, 'handle_save_group' ) );
 		add_action( 'admin_post_icmm_delete_group', array( $this, 'handle_delete_group' ) );
 		add_action( 'admin_post_icmm_save_roles', array( $this, 'handle_save_roles' ) );
+		add_action( 'admin_post_icmm_save_order', array( $this, 'handle_save_order' ) );
 		add_action( 'admin_post_icmm_save_user', array( $this, 'handle_save_user' ) );
 		add_action( 'admin_post_icmm_bulk_assign', array( $this, 'handle_bulk_assign' ) );
 		add_filter( 'plugin_action_links_' . ICMM_BASENAME, array( $this, 'action_links' ) );
@@ -230,6 +231,19 @@ class ICMM_Admin {
 		$this->redirect( array( 'tab' => 'assignments', 'icmm_status' => 'roles' ) );
 	}
 
+	public function handle_save_order() {
+		$this->verify( 'icmm_save_order' );
+		if ( ! empty( $_POST['reset'] ) ) {
+			ICMM_Order::clear();
+			$this->redirect( array( 'tab' => 'order', 'icmm_status' => 'oreset' ) );
+		}
+		// Raw slugs (they contain ?, =, . — so no sanitize_key here). ICMM_Order::save
+		// whitelists them against the live catalog, so only real menu slugs persist.
+		$slugs = isset( $_POST['order'] ) ? (array) wp_unslash( $_POST['order'] ) : array();
+		ICMM_Order::save( $slugs );
+		$this->redirect( array( 'tab' => 'order', 'icmm_status' => 'order' ) );
+	}
+
 	public function handle_save_user() {
 		$this->verify( 'icmm_save_user' );
 		$user_id = isset( $_POST['user_id'] ) ? (int) $_POST['user_id'] : 0;
@@ -291,10 +305,13 @@ class ICMM_Admin {
 		echo '<nav class="nav-tab-wrapper icmm-tabs">';
 		$this->tab_link( 'groups', __( 'Groups', 'ic-menu-manager' ), $tab );
 		$this->tab_link( 'assignments', __( 'Assignments', 'ic-menu-manager' ), $tab );
+		$this->tab_link( 'order', __( 'Menu Order', 'ic-menu-manager' ), $tab );
 		echo '</nav>';
 
 		if ( 'assignments' === $tab ) {
 			$this->render_assignments();
+		} elseif ( 'order' === $tab ) {
+			$this->render_order();
 		} elseif ( 'new' === $action || 'edit' === $action ) {
 			$this->render_builder();
 		} else {
@@ -318,6 +335,8 @@ class ICMM_Admin {
 			'roles'   => array( 'success', __( 'Role assignments saved.', 'ic-menu-manager' ) ),
 			'user'    => array( 'success', __( 'User assignment saved.', 'ic-menu-manager' ) ),
 			'noname'  => array( 'error', __( 'Please give the group a name.', 'ic-menu-manager' ) ),
+			'order'   => array( 'success', __( 'Menu order saved.', 'ic-menu-manager' ) ),
+			'oreset'  => array( 'success', __( 'Menu order reset to the WordPress default.', 'ic-menu-manager' ) ),
 		);
 		if ( isset( $map[ $status ] ) ) {
 			printf( '<div class="notice notice-%s is-dismissible"><p>%s</p></div>', esc_attr( $map[ $status ][0] ), esc_html( $map[ $status ][1] ) );
@@ -451,6 +470,59 @@ class ICMM_Admin {
 
 		echo '<p class="submit"><button type="submit" class="button button-primary">' . esc_html__( 'Save Group', 'ic-menu-manager' ) . '</button> ';
 		echo '<a href="' . esc_url( add_query_arg( array( 'page' => self::SLUG, 'tab' => 'groups' ), admin_url( 'admin.php' ) ) ) . '" class="button">' . esc_html__( 'Cancel', 'ic-menu-manager' ) . '</a></p>';
+		echo '</form>';
+	}
+
+	private function render_order() {
+		$catalog = ICMM_Catalog::get();
+		$menu    = (array) $catalog['menu'];
+
+		echo '<h2>' . esc_html__( 'Sidebar menu order', 'ic-menu-manager' ) . '</h2>';
+		echo '<p class="description">' . esc_html__( 'Drag the items (or use the ↑ ↓ buttons) to set the order of the top-level wp-admin sidebar. This order applies to everyone on the site. Items hidden by a group simply don\'t appear, and newly-installed plugins are added at the end until you move them.', 'ic-menu-manager' ) . '</p>';
+
+		if ( empty( $menu ) ) {
+			echo '<div class="notice notice-warning inline"><p>' . esc_html__( 'The menu catalog has not been captured yet. Visit any wp-admin page as a full administrator, then reload this page.', 'ic-menu-manager' ) . '</p></div>';
+			return;
+		}
+
+		// Display order = saved slugs first (still present), then any catalog items
+		// not yet in the saved order, so new menus surface at the end.
+		$by_slug = array();
+		foreach ( $menu as $item ) {
+			$by_slug[ $item['slug'] ] = $item;
+		}
+		$ordered = array();
+		foreach ( ICMM_Order::get() as $slug ) {
+			if ( isset( $by_slug[ $slug ] ) ) {
+				$ordered[] = $by_slug[ $slug ];
+				unset( $by_slug[ $slug ] );
+			}
+		}
+		foreach ( $by_slug as $item ) {
+			$ordered[] = $item;
+		}
+
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="icmm-order-form">';
+		wp_nonce_field( 'icmm_save_order' );
+		echo '<input type="hidden" name="action" value="icmm_save_order">';
+		echo '<ul class="icmm-order-list">';
+		foreach ( $ordered as $item ) {
+			echo '<li class="icmm-order-item" draggable="true" data-slug="' . esc_attr( $item['slug'] ) . '">';
+			echo '<span class="dashicons dashicons-menu icmm-order-handle" aria-hidden="true"></span>';
+			echo '<span class="icmm-order-title">' . esc_html( $item['title'] ) . '</span>';
+			echo '<code class="icmm-order-slug">' . esc_html( $item['slug'] ) . '</code>';
+			echo '<span class="icmm-order-moves">';
+			echo '<button type="button" class="button icmm-move-up" aria-label="' . esc_attr__( 'Move up', 'ic-menu-manager' ) . '">&uarr;</button> ';
+			echo '<button type="button" class="button icmm-move-down" aria-label="' . esc_attr__( 'Move down', 'ic-menu-manager' ) . '">&darr;</button>';
+			echo '</span>';
+			echo '<input type="hidden" name="order[]" value="' . esc_attr( $item['slug'] ) . '">';
+			echo '</li>';
+		}
+		echo '</ul>';
+		echo '<p class="submit">';
+		echo '<button type="submit" class="button button-primary">' . esc_html__( 'Save Order', 'ic-menu-manager' ) . '</button> ';
+		echo '<button type="submit" name="reset" value="1" class="button icmm-order-reset">' . esc_html__( 'Reset to default', 'ic-menu-manager' ) . '</button>';
+		echo '</p>';
 		echo '</form>';
 	}
 
