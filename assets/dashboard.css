@@ -1,0 +1,210 @@
+/* IC Menu Manager — client dashboard */
+
+.icmm-dash {
+	--icmm-accent: var(--wp-admin-theme-color, #2271b1);
+	--icmm-accent-soft: #f0f6fc;
+	--icmm-border: #dcdcde;
+	--icmm-text: #1d2327;
+	--icmm-muted: #646970;
+	max-width: 1120px;
+}
+
+@supports (background: color-mix(in srgb, red 10%, white)) {
+	.icmm-dash {
+		--icmm-accent-soft: color-mix(in srgb, var(--icmm-accent) 9%, #fff);
+	}
+}
+
+/* Header */
+.icmm-dash-head {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 16px;
+	flex-wrap: wrap;
+	margin: 12px 0 28px;
+	padding-bottom: 20px;
+	border-bottom: 1px solid var(--icmm-border);
+}
+
+.icmm-dash-site {
+	margin: 0 0 4px;
+	color: var(--icmm-muted);
+	font-size: 13px;
+	font-weight: 500;
+	letter-spacing: 0.02em;
+}
+
+.icmm-dash .icmm-dash-title {
+	margin: 0;
+	padding: 0;
+	color: var(--icmm-text);
+	font-size: 26px;
+	font-weight: 600;
+	line-height: 1.25;
+}
+
+.icmm-dash-view.button {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 36px;
+	padding: 0 14px;
+}
+
+.icmm-dash-view .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+}
+
+/* Tiles */
+.icmm-tiles {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 16px;
+}
+
+.icmm-tile {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 16px;
+	min-height: 112px;
+	padding: 20px;
+	background: #fff;
+	border: 1px solid var(--icmm-border);
+	border-radius: 10px;
+	color: var(--icmm-text);
+	text-decoration: none;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+	transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+	/* backwards, not both: a held end-state transform would cancel the hover lift. */
+	animation: icmm-tile-in 0.32s ease backwards;
+	animation-delay: calc(var(--icmm-i, 0) * 30ms);
+}
+
+.icmm-tile:hover,
+.icmm-tile:focus-visible {
+	color: var(--icmm-text);
+	border-color: var(--icmm-accent);
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+	transform: translateY(-2px);
+}
+
+.icmm-tile:focus-visible {
+	outline: 2px solid var(--icmm-accent);
+	outline-offset: 2px;
+}
+
+.icmm-tile-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	border-radius: 10px;
+	background: var(--icmm-accent-soft);
+	color: var(--icmm-accent);
+}
+
+.icmm-tile-icon .dashicons {
+	font-size: 22px;
+	width: 22px;
+	height: 22px;
+}
+
+.icmm-tile-icon img {
+	width: 22px;
+	height: 22px;
+	object-fit: contain;
+}
+
+.icmm-tile-svg {
+	display: block;
+	width: 22px;
+	height: 22px;
+	background-color: var(--icmm-accent);
+	-webkit-mask: var(--icmm-svg) center / contain no-repeat;
+	mask: var(--icmm-svg) center / contain no-repeat;
+}
+
+.icmm-tile-label {
+	margin-top: auto;
+	padding-right: 24px;
+	font-size: 15px;
+	font-weight: 600;
+	line-height: 1.35;
+}
+
+.icmm-tile-arrow {
+	position: absolute;
+	right: 16px;
+	bottom: 20px;
+	color: var(--icmm-muted);
+	transition: transform 0.18s ease, color 0.18s ease;
+}
+
+.icmm-tile:hover .icmm-tile-arrow,
+.icmm-tile:focus-visible .icmm-tile-arrow {
+	color: var(--icmm-accent);
+	transform: translateX(3px);
+}
+
+.icmm-dash-empty {
+	padding: 32px;
+	background: #fff;
+	border: 1px dashed var(--icmm-border);
+	border-radius: 10px;
+	color: var(--icmm-muted);
+	text-align: center;
+}
+
+@keyframes icmm-tile-in {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.icmm-tile,
+	.icmm-tile-arrow {
+		animation: none;
+		transition: none;
+	}
+	.icmm-tile:hover,
+	.icmm-tile:focus-visible {
+		transform: none;
+	}
+}
+
+@media (max-width: 600px) {
+	.icmm-dash-head {
+		align-items: flex-start;
+		margin-bottom: 20px;
+	}
+	.icmm-dash .icmm-dash-title {
+		font-size: 22px;
+	}
+	.icmm-tiles {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 12px;
+	}
+	.icmm-tile {
+		min-height: 100px;
+		padding: 16px;
+		gap: 14px;
+	}
+	.icmm-tile-arrow {
+		display: none;
+	}
+	.icmm-tile-label {
+		padding-right: 0;
+	}
+}

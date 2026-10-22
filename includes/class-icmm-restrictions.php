@@ -68,7 +68,7 @@ class ICMM_Restrictions {
 		return $gid;
 	}
 
-	private function current_group() {
+	public function current_group() {
 		$gid = $this->effective_group_id( get_current_user_id() );
 		return $gid ? ICMM_Groups::get( $gid ) : null;
 	}
@@ -125,10 +125,18 @@ class ICMM_Restrictions {
 			return;
 		}
 
+		global $pagenow;
 		$blocked = $this->blocked_page_slugs( $group );
+		$landing = in_array( 'index.php', $blocked, true ) ? 'profile.php' : 'index.php';
+
+		// Never guard the landing page onto itself: if a group blocks both Dashboard
+		// and Profile, redirecting profile.php to profile.php loops forever.
+		if ( $pagenow === $landing && empty( $_GET['page'] ) ) {
+			return;
+		}
+
 		foreach ( $blocked as $slug ) {
 			if ( $this->request_matches( $slug ) ) {
-				$landing = in_array( 'index.php', $blocked, true ) ? 'profile.php' : 'index.php';
 				wp_safe_redirect( add_query_arg( 'icmm_blocked', '1', admin_url( $landing ) ) );
 				exit;
 			}
@@ -175,7 +183,7 @@ class ICMM_Restrictions {
 		if ( empty( $_GET['icmm_blocked'] ) ) {
 			return;
 		}
-		echo '<div class="notice notice-error is-dismissible"><p>'
+		echo '<div class="notice notice-error is-dismissible icmm-notice"><p>'
 			. esc_html__( 'You do not have permission to access that page.', 'ic-menu-manager' )
 			. '</p></div>';
 	}

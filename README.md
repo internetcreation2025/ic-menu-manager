@@ -20,6 +20,13 @@ On activation the plugin creates an **IC Client** group that blocks (items marke
 
 Plugin-specific items are resolved against the site's live menu, so a missing plugin is simply skipped. The seed is applied on the first wp-admin load after activation (when the live menu is available).
 
+## Client dashboard (v1.3.0)
+
+Each group has a **Dashboard** panel with two options:
+
+- **Hide admin notices:** removes the notice banners plugins and WordPress add, on every admin screen, for users in that group. Feedback WordPress prints inside the page itself ("Post updated", "Moved to the Bin") still shows.
+- **Use the shortcut dashboard:** replaces the Dashboard with a greeting, a "View website" button and one tile per ticked sidebar section. Tiles use the section's own icon and link, follow the Menu Order, and never show a section the group blocks.
+
 ## Safety
 
 Three layers stop you locking yourself out:

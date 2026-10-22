@@ -32,6 +32,10 @@ class ICMM_Groups {
 			'block_menu'     => isset( $raw['block_menu'] ) ? array_values( array_unique( array_map( 'strval', (array) $raw['block_menu'] ) ) ) : array(),
 			'block_submenu'  => self::normalise_submenu( isset( $raw['block_submenu'] ) ? $raw['block_submenu'] : array() ),
 			'block_adminbar' => isset( $raw['block_adminbar'] ) ? array_values( array_unique( array_map( 'strval', (array) $raw['block_adminbar'] ) ) ) : array(),
+			// Client dashboard (v1.3.0). Off / empty by default, so older groups behave as before.
+			'hide_notices'    => ! empty( $raw['hide_notices'] ),
+			'dashboard'       => ! empty( $raw['dashboard'] ),
+			'dashboard_tiles' => isset( $raw['dashboard_tiles'] ) ? array_values( array_unique( array_map( 'strval', (array) $raw['dashboard_tiles'] ) ) ) : array(),
 		);
 	}
 

@@ -204,6 +204,9 @@ class ICMM_Admin {
 			'block_menu'     => isset( $_POST['block_menu'] ) ? (array) wp_unslash( $_POST['block_menu'] ) : array(),
 			'block_submenu'  => isset( $_POST['block_submenu'] ) ? (array) wp_unslash( $_POST['block_submenu'] ) : array(),
 			'block_adminbar' => isset( $_POST['block_adminbar'] ) ? (array) wp_unslash( $_POST['block_adminbar'] ) : array(),
+			'hide_notices'    => ! empty( $_POST['hide_notices'] ),
+			'dashboard'       => ! empty( $_POST['dashboard'] ),
+			'dashboard_tiles' => isset( $_POST['dashboard_tiles'] ) ? (array) wp_unslash( $_POST['dashboard_tiles'] ) : array(),
 		);
 		if ( '' === trim( $raw['name'] ) ) {
 			$this->redirect( array( 'tab' => 'groups', 'action' => 'new', 'icmm_status' => 'noname' ) );
@@ -408,7 +411,7 @@ class ICMM_Admin {
 	private function render_builder() {
 		$id    = isset( $_GET['group'] ) ? sanitize_key( $_GET['group'] ) : '';
 		$group = $id ? ICMM_Groups::get( $id ) : null;
-		$group = $group ? $group : array( 'name' => '', 'block_menu' => array(), 'block_submenu' => array(), 'block_adminbar' => array() );
+		$group = ICMM_Groups::normalise( $group ? $group : array() );
 		$catalog = ICMM_Catalog::get();
 
 		$is_new = ! $id || ! ICMM_Groups::get( $id );
@@ -464,6 +467,26 @@ class ICMM_Admin {
 			$checked = in_array( $node['id'], (array) $group['block_adminbar'], true );
 			echo '<label class="icmm-bar"><input type="checkbox" name="block_adminbar[]" value="' . esc_attr( $node['id'] ) . '" ' . checked( $checked, true, false ) . '> ' . esc_html( $node['title'] ) . ' <code>' . esc_html( $node['id'] ) . '</code></label>';
 		}
+		echo '</div>';
+
+		/* Panel C: client dashboard */
+		echo '<div class="icmm-panel icmm-dash-opts">';
+		echo '<h3>' . esc_html__( 'Dashboard', 'ic-menu-manager' ) . '</h3>';
+		echo '<label class="icmm-bar"><input type="checkbox" name="hide_notices" value="1" ' . checked( $group['hide_notices'], true, false ) . '> <strong>' . esc_html__( 'Hide admin notices', 'ic-menu-manager' ) . '</strong></label>';
+		echo '<p class="description">' . esc_html__( 'Hides the notice banners plugins and WordPress add, on every admin screen for this group. Save messages such as “Post updated” still show.', 'ic-menu-manager' ) . '</p>';
+		echo '<label class="icmm-bar"><input type="checkbox" name="dashboard" value="1" class="icmm-dash-toggle" ' . checked( $group['dashboard'], true, false ) . '> <strong>' . esc_html__( 'Use the shortcut dashboard', 'ic-menu-manager' ) . '</strong></label>';
+		echo '<p class="description">' . esc_html__( 'Replaces the Dashboard with a greeting and a tile for each section ticked below. Tiles follow the Menu Order.', 'ic-menu-manager' ) . '</p>';
+		echo '<div class="icmm-tile-opts">';
+		echo '<h4>' . esc_html__( 'Dashboard tiles', 'ic-menu-manager' ) . '</h4>';
+		foreach ( (array) $catalog['menu'] as $item ) {
+			if ( 'index.php' === $item['slug'] || self::SLUG === $item['slug'] ) {
+				continue;
+			}
+			$tile_checked = in_array( $item['slug'], $group['dashboard_tiles'], true );
+			echo '<label class="icmm-bar"><input type="checkbox" class="icmm-tile-cb" name="dashboard_tiles[]" value="' . esc_attr( $item['slug'] ) . '" ' . checked( $tile_checked, true, false ) . '> ' . esc_html( $item['title'] ) . '</label>';
+		}
+		echo '<p class="description">' . esc_html__( 'Sections blocked in the Admin Sidebar panel can’t be shown as tiles.', 'ic-menu-manager' ) . '</p>';
+		echo '</div>';
 		echo '</div>';
 
 		echo '</div>'; // panels

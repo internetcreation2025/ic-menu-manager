@@ -25,6 +25,26 @@
 			sync();
 		} );
 
+		// Dashboard tiles: a section blocked in the sidebar panel can't be a tile.
+		// Disabled (not unticked) so unblocking it brings the tile choice back.
+		var tileCbs = document.querySelectorAll( '.icmm-tile-cb' );
+		tileCbs.forEach( function ( tile ) {
+			var top = null;
+			tops.forEach( function ( t ) {
+				if ( t.value === tile.value ) {
+					top = t;
+				}
+			} );
+			if ( ! top ) {
+				return;
+			}
+			function syncTile() {
+				tile.disabled = top.checked;
+			}
+			top.addEventListener( 'change', syncTile );
+			syncTile();
+		} );
+
 		// Bulk user assignment: live filter + select-all/none of shown users.
 		var filter = document.querySelector( '.icmm-user-filter' );
 		var multi  = document.querySelector( '.icmm-user-multiselect' );

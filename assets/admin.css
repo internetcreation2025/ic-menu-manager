@@ -73,6 +73,20 @@
 	font-size: 11px;
 }
 
+/* Builder panel C: client dashboard */
+.icmm-dash-opts .description {
+	margin: 0 0 12px 24px;
+}
+
+.icmm-tile-opts h4 {
+	margin: 16px 0 6px;
+}
+
+.icmm-dash-opts:has(.icmm-dash-toggle:not(:checked)) .icmm-tile-opts,
+.icmm-tile-cb:disabled {
+	opacity: 0.5;
+}
+
 .icmm-inline {
 	display: inline-block;
 	margin: 0;
